@@ -16,6 +16,10 @@ The menu-bar icon shows state (`☕` active / empty cup idle), and everything is
 toggleable from its dropdown. It can launch itself at login via a launchd
 LaunchAgent.
 
+> **Bottom line:** it keeps your Mac awake through inactivity, but not through a
+> lid close — so if you're stepping away and want it to stay connected, leave
+> the lid up.
+
 ![KeepAwake menu-bar dropdown](docs/screenshot.png)
 
 ## Install a prebuilt release (no build)
