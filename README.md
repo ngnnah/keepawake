@@ -14,17 +14,28 @@ The menu-bar icon shows state (`☕` active / empty cup idle), and everything is
 toggleable from its dropdown. It can launch itself at login via a launchd
 LaunchAgent.
 
+![KeepAwake menu-bar dropdown](docs/screenshot.png)
+
 ## Build & install
 
 ```bash
 ./build.sh
 ```
 
-Requires the Xcode **Command Line Tools** (`swiftc`, `iconutil`) — no runtime
-dependencies. The script compiles a single-file Swift app into
-`KeepAwake.app`, generates an icon, ad-hoc signs it, and copies it to
+or `make build`. Requires the Xcode **Command Line Tools** (`swiftc`,
+`iconutil`) — no runtime dependencies. The script compiles a single-file Swift
+app into `KeepAwake.app`, generates an icon, ad-hoc signs it, and copies it to
 `/Applications`. Then launch it from `/Applications` (first launch of an
 unsigned app: right-click → **Open**).
+
+### Make targets
+
+| Target | Does |
+|--------|------|
+| `make build` | Compile + install to `/Applications` |
+| `make uninstall` | Quit, remove the app, LaunchAgent, and stray `caffeinate` |
+| `make screenshot` | Regenerate `docs/screenshot.png` from `mockup.swift` |
+| `make clean` | Remove `build/` |
 
 ## Menu
 
@@ -61,8 +72,18 @@ single-instance guard).
 ## Uninstall
 
 ```bash
-# turn off "Launch at login" in the menu first, then:
+make uninstall
+```
+
+Or manually:
+
+```bash
 rm -rf /Applications/KeepAwake.app
 rm -f ~/Library/LaunchAgents/com.nhat.keepawake.plist
 launchctl bootout gui/$(id -u)/com.nhat.keepawake 2>/dev/null || true
+pkill -f "/usr/bin/caffeinate -dimu" 2>/dev/null || true
 ```
+
+## License
+
+MIT — see [LICENSE](LICENSE).
