@@ -2,13 +2,17 @@ APP    = KeepAwake
 BUNDLE = com.nhat.keepawake
 UID   := $(shell id -u)
 
-.PHONY: all build install uninstall screenshot clean
+.PHONY: all build test install uninstall screenshot clean
 
 all: build
 
 ## build + install KeepAwake.app to /Applications
 build:
 	./build.sh
+
+## run the unit tests (plain executable — works with Command Line Tools alone)
+test:
+	swift run KeepAwakeTests
 
 ## alias for build (build.sh already installs to /Applications)
 install: build
@@ -31,4 +35,4 @@ screenshot:
 
 ## remove build artifacts
 clean:
-	rm -rf build
+	rm -rf build .build

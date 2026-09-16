@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import KeepAwakeCore
 
 // KeepAwake — a menu-bar app that prevents sleep (via `caffeinate`) and
 // periodically pings a host over the VPN to defeat idle timeouts.
@@ -26,7 +27,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         set { defaults.set(newValue, forKey: "pingTarget") }
     }
     var pingInterval: Double {
-        get { let v = defaults.double(forKey: "pingIntervalSeconds"); return v > 0 ? v : 60 }
+        get { Core.resolveInterval(defaults.double(forKey: "pingIntervalSeconds")) }
         set { defaults.set(newValue, forKey: "pingIntervalSeconds") }
     }
 
@@ -41,6 +42,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if vpnPingOn { startPingTimer() }
     }
 
+    func applicationWillTerminate(_ notification: Notification) {
+        stopCaffeinate()
+    }
+
     /// Kill any `caffeinate -dimu` left over from a previous crash. We are
     /// single-instance, so any such process is a stale orphan that would
     /// otherwise keep the Mac awake forever with no UI to stop it. Runs before
@@ -51,10 +56,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         p.arguments = ["-f", "caffeinate -dimu"]
         try? p.run()
         p.waitUntilExit()
-    }
-
-    func applicationWillTerminate(_ notification: Notification) {
-        stopCaffeinate()
     }
 
     // MARK: - Menu-bar icon
@@ -159,7 +160,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if alert.runModal() == .alertFirstButtonReturn {
             let t = targetField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
             if !t.isEmpty { pingTarget = t }
-            if let iv = Double(intervalField.stringValue), iv >= 5 { pingInterval = iv }
+            if let iv = Double(intervalField.stringValue), Core.isAcceptableInterval(iv) { pingInterval = iv }
             if vpnPingOn { startPingTimer() } // restart with new interval / target
             rebuildMenu()
         }
@@ -210,7 +211,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func performPing() {
         guard vpnPingOn else { return }
-        let target = normalizedTarget()
+        let target = Core.normalizeTarget(pingTarget)
         guard !target.isEmpty else { return }
 
         DispatchQueue.global(qos: .utility).async { [weak self] in
@@ -229,9 +230,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 let data = pipe.fileHandleForReading.readDataToEndOfFile()
                 let code = String(data: data, encoding: .utf8)?
                     .trimmingCharacters(in: .whitespacesAndNewlines) ?? "?"
-                result = p.terminationStatus == 0
-                    ? "HTTP \(code) @ \(self.timeString())"
-                    : "unreachable @ \(self.timeString())"
+                result = Core.formatPingResult(exitStatus: p.terminationStatus,
+                                               httpCode: code, at: self.timeString())
             } catch {
                 result = "error @ \(self.timeString())"
             }
@@ -241,13 +241,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self.rebuildMenu()
             }
         }
-    }
-
-    func normalizedTarget() -> String {
-        var t = pingTarget.trimmingCharacters(in: .whitespacesAndNewlines)
-        if t.isEmpty { return t }
-        if !t.contains("://") { t = "https://" + t }
-        return t
     }
 
     func timeString() -> String {
@@ -260,7 +253,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func loginPlistURL() -> URL {
         FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/LaunchAgents/com.nhat.keepawake.plist")
+            .appendingPathComponent("Library/LaunchAgents/\(Core.bundleID).plist")
     }
 
     func isLoginEnabled() -> Bool {
@@ -272,30 +265,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if on {
             let exe = Bundle.main.executableURL?.path
                 ?? "/Applications/KeepAwake.app/Contents/MacOS/KeepAwake"
-            let plist = """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-            <plist version="1.0">
-            <dict>
-                <key>Label</key><string>com.nhat.keepawake</string>
-                <key>ProgramArguments</key>
-                <array><string>\(exe)</string></array>
-                <key>RunAtLoad</key><true/>
-                <key>LimitLoadToSessionType</key><string>Aqua</string>
-                <key>ProcessType</key><string>Interactive</string>
-            </dict>
-            </plist>
-            """
             try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(),
                                                      withIntermediateDirectories: true)
-            try? plist.write(to: url, atomically: true, encoding: .utf8)
+            try? Core.loginPlist(executablePath: exe).write(to: url, atomically: true, encoding: .utf8)
             // Loads on next login. Not bootstrapped now, so we never spawn a
             // second instance alongside the one the user is already running.
         } else {
             try? FileManager.default.removeItem(at: url)
             let task = Process()
             task.executableURL = URL(fileURLWithPath: "/bin/launchctl")
-            task.arguments = ["bootout", "gui/\(getuid())/com.nhat.keepawake"]
+            task.arguments = ["bootout", "gui/\(getuid())/\(Core.bundleID)"]
             try? task.run()
             task.waitUntilExit()
         }
@@ -306,7 +285,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 // Single-instance guard: if launchd starts us at login while an instance is
 // already running (or vice versa), the newcomer exits quietly.
-let bundleID = Bundle.main.bundleIdentifier ?? "com.nhat.keepawake"
+let bundleID = Bundle.main.bundleIdentifier ?? Core.bundleID
 if NSWorkspace.shared.runningApplications.filter({ $0.bundleIdentifier == bundleID }).count > 1 {
     exit(0)
 }

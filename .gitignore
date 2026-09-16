@@ -1,4 +1,5 @@
 build/
+.build/
 *.icns
 *.iconset/
 .DS_Store

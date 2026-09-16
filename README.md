@@ -37,20 +37,45 @@ Releases are built automatically by CI when a `v*` tag is pushed.
 ./build.sh
 ```
 
-or `make build`. Requires the Xcode **Command Line Tools** (`swiftc`,
-`iconutil`) — no runtime dependencies. The script compiles a single-file Swift
-app into `KeepAwake.app`, generates an icon, ad-hoc signs it, and copies it to
-`/Applications`. Then launch it from `/Applications` (first launch of an
-unsigned app: right-click → **Open**).
+or `make build`. Requires the Xcode **Command Line Tools** (`swift`, `swiftc`,
+`iconutil`) — no runtime dependencies. The script builds the Swift package with
+SwiftPM (`swift build`), wraps the binary in `KeepAwake.app`, generates an icon,
+ad-hoc signs it, and copies it to `/Applications`. Then launch it from
+`/Applications` (first launch of an unsigned app: right-click → **Open**).
 
 ### Make targets
 
 | Target | Does |
 |--------|------|
-| `make build` | Compile + install to `/Applications` |
+| `make build` | Build + install to `/Applications` |
+| `make test` | Run the unit tests |
 | `make uninstall` | Quit, remove the app, LaunchAgent, and stray `caffeinate` |
 | `make screenshot` | Regenerate `docs/screenshot.png` from `mockup.swift` |
-| `make clean` | Remove `build/` |
+| `make clean` | Remove `build/` and `.build/` |
+
+## Tests
+
+```bash
+make test        # or: swift run KeepAwakeTests
+```
+
+The sleep/network side effects live in the app target; the pure logic lives in
+the `KeepAwakeCore` module and is covered by tests: ping-target normalization,
+interval resolution/validation, ping-result formatting, and login-plist
+generation (parsed back to confirm it's valid). The tests are a plain
+executable rather than XCTest, so they run with the Command Line Tools alone
+(XCTest ships only with full Xcode).
+
+## Project layout
+
+```
+Sources/KeepAwakeCore/   Foundation-only pure logic (unit-tested)
+Sources/KeepAwake/       AppKit menu-bar app (main.swift)
+Sources/KeepAwakeTests/  dependency-free test runner
+build.sh                 SwiftPM build → .app bundle (icon, sign, install)
+makeicon.swift           renders the app icon
+mockup.swift             renders docs/screenshot.png
+```
 
 ## Menu
 

@@ -59,8 +59,9 @@ gen icon_512x512.png    512
 gen icon_512x512@2x.png 1024
 iconutil -c icns "$ICONSET" -o "$RES/AppIcon.icns"
 
-echo "==> Compiling app"
-swiftc -O main.swift -o "$MACOS/$APP_NAME"
+echo "==> Building app binary (SwiftPM)"
+swift build -c release --product "$APP_NAME"
+cp -f ".build/release/$APP_NAME" "$MACOS/$APP_NAME"
 
 echo "==> Ad-hoc signing"
 codesign --force --deep -s - "$APP"
