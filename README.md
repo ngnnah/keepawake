@@ -1,5 +1,7 @@
 # KeepAwake
 
+[![build](https://github.com/ngnnah/keepawake/actions/workflows/build.yml/badge.svg)](https://github.com/ngnnah/keepawake/actions/workflows/build.yml)
+
 A tiny macOS **menu-bar app** that keeps your Mac awake and keeps a VPN/Wi-Fi
 connection from idling out while you're away.
 
@@ -15,6 +17,19 @@ toggleable from its dropdown. It can launch itself at login via a launchd
 LaunchAgent.
 
 ![KeepAwake menu-bar dropdown](docs/screenshot.png)
+
+## Install a prebuilt release (no build)
+
+Grab `KeepAwake.zip` from the [Releases](https://github.com/ngnnah/keepawake/releases)
+page, then:
+
+```bash
+unzip KeepAwake.zip -d /Applications/
+xattr -dr com.apple.quarantine /Applications/KeepAwake.app   # clear the download flag
+open -a KeepAwake
+```
+
+Releases are built automatically by CI when a `v*` tag is pushed.
 
 ## Build & install
 

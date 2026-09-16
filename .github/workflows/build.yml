@@ -1,0 +1,27 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build (no install)
+        run: SKIP_INSTALL=1 ./build.sh
+
+      - name: Verify bundle
+        run: |
+          test -x build/KeepAwake.app/Contents/MacOS/KeepAwake
+          test -f build/KeepAwake.app/Contents/Resources/AppIcon.icns
+          plutil -lint build/KeepAwake.app/Contents/Info.plist
+
+      - name: Upload app artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: KeepAwake-app
+          path: build/KeepAwake.app

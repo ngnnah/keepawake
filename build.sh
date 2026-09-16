@@ -65,8 +65,11 @@ swiftc -O main.swift -o "$MACOS/$APP_NAME"
 echo "==> Ad-hoc signing"
 codesign --force --deep -s - "$APP"
 
-echo "==> Installing to /Applications"
-rm -rf "/Applications/$APP_NAME.app"
-cp -R "$APP" "/Applications/"
-
-echo "==> Done. Launch it from /Applications or run:  open -a $APP_NAME"
+if [ -n "${SKIP_INSTALL:-}" ]; then
+    echo "==> SKIP_INSTALL set — built at $APP (not installed)"
+else
+    echo "==> Installing to /Applications"
+    rm -rf "/Applications/$APP_NAME.app"
+    cp -R "$APP" "/Applications/"
+    echo "==> Done. Launch it from /Applications or run:  open -a $APP_NAME"
+fi

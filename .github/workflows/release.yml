@@ -1,0 +1,26 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build (no install)
+        run: SKIP_INSTALL=1 ./build.sh
+
+      - name: Zip app
+        run: ditto -c -k --sequesterRsrc --keepParent build/KeepAwake.app KeepAwake.zip
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: KeepAwake.zip
+          generate_release_notes: true
