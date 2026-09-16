@@ -100,8 +100,12 @@ single-instance guard).
 
 ## Caveats
 
-- **Closing a MacBook lid still sleeps** (clamshell sleep) regardless of
-  `caffeinate` — keep the lid open.
+- **Closing the lid still sleeps the Mac.** `caffeinate` blocks only *idle*
+  sleep (the inactivity timers) and display sleep — it can't override the sleep
+  the hardware triggers the moment you shut the lid. Keep the lid open while
+  you're away. (True *clamshell mode* — lid closed while on power with an
+  external display + keyboard/mouse — stays awake on its own; that's a
+  different situation.)
 - **Split-tunnel VPN:** if only internal ranges route through the VPN, pinging a
   public host (like `example.com`) won't keep the *tunnel* alive — point it at an
   internal host instead. Full-tunnel VPNs are fine with any target.
