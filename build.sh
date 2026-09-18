@@ -11,6 +11,17 @@ CONTENTS="$APP/Contents"
 MACOS="$CONTENTS/MacOS"
 RES="$CONTENTS/Resources"
 
+# Bundle version: the v* tag being built (CI release), else the newest local
+# tag, else 1.0 for an untagged dev build. Override with VERSION=1.2.3 ./build.sh
+if [ -z "${VERSION:-}" ]; then
+    case "${GITHUB_REF_NAME:-}" in
+        v*) VERSION="$GITHUB_REF_NAME" ;;
+        *)  VERSION="$(git describe --tags --abbrev=0 2>/dev/null || true)" ;;
+    esac
+fi
+VERSION="${VERSION#v}"
+VERSION="${VERSION:-1.0}"
+
 echo "==> Checking toolchain"
 command -v swiftc  >/dev/null || { echo "swiftc not found — run: xcode-select --install"; exit 1; }
 command -v iconutil >/dev/null || { echo "iconutil not found (Command Line Tools)"; exit 1; }
@@ -19,7 +30,7 @@ echo "==> Cleaning previous build"
 rm -rf "$APP"
 mkdir -p "$MACOS" "$RES"
 
-echo "==> Writing Info.plist"
+echo "==> Writing Info.plist (version $VERSION)"
 cat > "$CONTENTS/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -30,8 +41,8 @@ cat > "$CONTENTS/Info.plist" <<EOF
     <key>CFBundleIdentifier</key><string>$BUNDLE_ID</string>
     <key>CFBundleExecutable</key><string>$APP_NAME</string>
     <key>CFBundleIconFile</key><string>AppIcon</string>
-    <key>CFBundleVersion</key><string>1.0</string>
-    <key>CFBundleShortVersionString</key><string>1.0</string>
+    <key>CFBundleVersion</key><string>$VERSION</string>
+    <key>CFBundleShortVersionString</key><string>$VERSION</string>
     <key>CFBundlePackageType</key><string>APPL</string>
     <key>LSUIElement</key><true/>
     <key>LSMinimumSystemVersion</key><string>13.0</string>
