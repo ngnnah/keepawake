@@ -5,12 +5,13 @@ import KeepAwakeCore
 // KeepAwake — a menu-bar app that prevents sleep (via `caffeinate`) and
 // periodically pings a host over the VPN to defeat idle timeouts.
 
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     let defaults = UserDefaults.standard
     var statusItem: NSStatusItem!
     var caffeinate: Process?
     var pingTimer: Timer?
     var lastPing = "—"
+    var menuIsOpen = false
 
     // MARK: - Persisted state
 
@@ -61,10 +62,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Menu-bar icon
 
     func updateIcon() {
-        let name = keepAwakeOn ? "cup.and.saucer.fill" : "cup.and.saucer"
-        let img = NSImage(systemSymbolName: name, accessibilityDescription: "KeepAwake")
-        img?.isTemplate = true // adapts to light/dark menu bar
-        statusItem.button?.image = img
+        guard let button = statusItem.button else { return }
+        let spec = Core.iconSpec(keepAwakeOn: keepAwakeOn, vpnPingOn: vpnPingOn)
+        button.image = StatusIcon.image(spec, menuOpen: menuIsOpen)
+        // Spells out both toggles for anyone who can't read the badge color.
+        button.toolTip = Core.statusTooltip(keepAwakeOn: keepAwakeOn, vpnPingOn: vpnPingOn)
+    }
+
+    // MARK: - NSMenuDelegate
+
+    // The status button highlights while its menu is open, so the mug is
+    // redrawn in the selected-item color to keep its contrast.
+    func menuWillOpen(_ menu: NSMenu) {
+        menuIsOpen = true
+        updateIcon()
+    }
+
+    func menuDidClose(_ menu: NSMenu) {
+        menuIsOpen = false
+        updateIcon()
     }
 
     // MARK: - Menu
@@ -72,10 +88,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func rebuildMenu() {
         let menu = NSMenu()
 
-        let header = NSMenuItem(title: keepAwakeOn ? "KeepAwake — active" : "KeepAwake — idle",
-                                action: nil, keyEquivalent: "")
+        let summary = Core.statusSummary(keepAwakeOn: keepAwakeOn, vpnPingOn: vpnPingOn)
+        let header = NSMenuItem(title: "KeepAwake — \(summary)", action: nil, keyEquivalent: "")
         header.isEnabled = false
         menu.addItem(header)
+        menu.addItem(.separator())
+
+        // Turns both toggles on at once — or off, when both are already on.
+        // Shows a dash when exactly one is on, so it doubles as a summary.
+        let everything = NSMenuItem(title: "Everything on", action: #selector(toggleEverything), keyEquivalent: "")
+        everything.target = self
+        switch Core.everythingState(keepAwakeOn: keepAwakeOn, vpnPingOn: vpnPingOn) {
+        case .on:    everything.state = .on
+        case .off:   everything.state = .off
+        case .mixed: everything.state = .mixed
+        }
+        menu.addItem(everything)
         menu.addItem(.separator())
 
         let awake = NSMenuItem(title: "Keep awake", action: #selector(toggleKeepAwake), keyEquivalent: "")
@@ -109,6 +137,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         quit.target = self
         menu.addItem(quit)
 
+        menu.delegate = self
         statusItem.menu = menu
     }
 
@@ -124,6 +153,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc func toggleVpnPing() {
         vpnPingOn.toggle()
         if vpnPingOn { startPingTimer() } else { stopPingTimer() }
+        updateIcon()
+        rebuildMenu()
+    }
+
+    @objc func toggleEverything() {
+        let target = Core.everythingTarget(keepAwakeOn: keepAwakeOn, vpnPingOn: vpnPingOn)
+        if keepAwakeOn != target {
+            keepAwakeOn = target
+            if target { startCaffeinate() } else { stopCaffeinate() }
+        }
+        if vpnPingOn != target {
+            vpnPingOn = target
+            if target { startPingTimer() } else { stopPingTimer() }
+        }
+        updateIcon()
         rebuildMenu()
     }
 

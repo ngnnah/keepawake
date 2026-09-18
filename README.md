@@ -12,9 +12,21 @@ It does two things while active:
 2. **VPN keep-alive** — pings a host you choose (default `https://example.com`)
    every 60s to defeat VPN/portal idle timeouts.
 
-The menu-bar icon shows state (`☕` active / empty cup idle), and everything is
-toggleable from its dropdown. It can launch itself at login via a launchd
-LaunchAgent.
+The menu-bar icon is the coffee mug, with a colored chip badged onto it naming
+which switches are on:
+
+| Chip | Keep awake | VPN keep-alive |
+|------|------------|----------------|
+| **2** 🟢 green | on | on |
+| **W** 🟤 brown | on | off |
+| **L** 🟣 purple | off | on |
+| **✕** 🔴 red | off | off |
+
+`W` for aWake, `L` for aLive, `2` for both, `✕` for neither. The character
+identifies the state on its own, so the icon still reads when the colors are
+hard to tell apart, and the tooltip spells both switches out in words.
+Everything is toggleable from the dropdown. It can launch itself at
+login via a launchd LaunchAgent.
 
 > **Bottom line:** it keeps your Mac awake through inactivity, but not through a
 > lid close — so if you're stepping away and want it to stay connected, leave
@@ -65,8 +77,9 @@ make test        # or: swift run KeepAwakeTests
 
 The sleep/network side effects live in the app target; the pure logic lives in
 the `KeepAwakeCore` module and is covered by tests: ping-target normalization,
-interval resolution/validation, ping-result formatting, and login-plist
-generation (parsed back to confirm it's valid). The tests are a plain
+interval resolution/validation, ping-result formatting, login-plist generation
+(parsed back to confirm it's valid), and the state mapping behind the icon
+badge, menu header, tooltip, and "Everything on" item. The tests are a plain
 executable rather than XCTest, so they run with the Command Line Tools alone
 (XCTest ships only with full Xcode).
 
@@ -74,7 +87,7 @@ executable rather than XCTest, so they run with the Command Line Tools alone
 
 ```
 Sources/KeepAwakeCore/   Foundation-only pure logic (unit-tested)
-Sources/KeepAwake/       AppKit menu-bar app (main.swift)
+Sources/KeepAwake/       AppKit menu-bar app (main.swift, StatusIcon.swift)
 Sources/KeepAwakeTests/  dependency-free test runner
 build.sh                 SwiftPM build → .app bundle (icon, sign, install)
 makeicon.swift           renders the app icon
@@ -85,6 +98,7 @@ mockup.swift             renders docs/screenshot.png
 
 | Item | What it does |
 |------|--------------|
+| **Everything on** | Turn both switches on at once — or off, when both are already on. Shows a dash when only one is on |
 | **Keep awake** | Toggle sleep prevention (`caffeinate`) |
 | **VPN keep-alive** | Toggle the periodic ping |
 | **Last ping** | Shows the most recent ping result/time |

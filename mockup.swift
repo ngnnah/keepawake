@@ -38,18 +38,22 @@ NSColor(calibratedWhite: 0.78, alpha: 1).setFill()
 NSRect(x: 0, y: H - barH - 0.5, width: W, height: 0.5).fill()
 draw("9:41", at: NSPoint(x: W - 56, y: H - barH + 6), size: 13, color: black, weight: .medium)
 
-// Highlighted status icon (menu is open).
+// Highlighted status icon (menu is open): the mug with its green "both on" chip.
 let iconX: CGFloat = 330
 blue.setFill()
-NSBezierPath(roundedRect: NSRect(x: iconX - 6, y: H - barH + 2, width: 30, height: barH - 4),
+NSBezierPath(roundedRect: NSRect(x: iconX - 6, y: H - barH + 2, width: 40, height: barH - 4),
              xRadius: 5, yRadius: 5).fill()
-draw("☕️", at: NSPoint(x: iconX - 2, y: H - barH + 4), size: 15, color: .white)
+draw("☕️", at: NSPoint(x: iconX - 4, y: H - barH + 6), size: 13, color: .white)
+NSColor(calibratedRed: 0.20, green: 0.78, blue: 0.35, alpha: 1).setFill()
+NSBezierPath(roundedRect: NSRect(x: iconX + 11, y: H - barH + 4, width: 16, height: 12),
+             xRadius: 3, yRadius: 3).fill()
+draw("2", at: NSPoint(x: iconX + 16, y: H - barH + 4), size: 10, color: .white, weight: .bold)
 
 // Dropdown panel.
-let panelW: CGFloat = 260
+let panelW: CGFloat = 300
 let panelX: CGFloat = iconX - panelW + 44
 let panelTop: CGFloat = H - barH - 6
-let panelH: CGFloat = 240
+let panelH: CGFloat = 282
 let panelRect = NSRect(x: panelX, y: panelTop - panelH, width: panelW, height: panelH)
 let panelPath = NSBezierPath(roundedRect: panelRect, xRadius: 10, yRadius: 10)
 
@@ -84,8 +88,11 @@ func sep() {
     y -= 14
 }
 
-draw("KeepAwake — active", at: NSPoint(x: panelX + leftPad, y: y), size: 12, color: gray, weight: .semibold)
+draw("KeepAwake — keep awake + VPN keep-alive", at: NSPoint(x: panelX + leftPad, y: y),
+     size: 12, color: gray, weight: .semibold)
 y -= 24
+sep()
+row(true, "Everything on")
 sep()
 row(true, "Keep awake")
 row(true, "VPN keep-alive")

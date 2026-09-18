@@ -47,4 +47,71 @@ public enum Core {
         </plist>
         """
     }
+
+    // MARK: - Menu-bar icon
+
+    /// Background color of the status chip.
+    public enum IconColor { case green, brown, purple, red }
+
+    /// What the menu-bar icon should draw: a short character on a colored
+    /// chip. The character alone identifies the state, so the icon is still
+    /// readable if the colors are hard to tell apart.
+    public struct IconSpec: Equatable {
+        public let text: String
+        public let color: IconColor
+        public init(text: String, color: IconColor) {
+            self.text = text
+            self.color = color
+        }
+    }
+
+    /// 2 green = both on            W brown = keep awake only
+    /// L purple = keep-alive only   ✕ red   = nothing on
+    ///
+    /// W for aWake, L for aLive, 2 for both, ✕ for neither.
+    public static func iconSpec(keepAwakeOn: Bool, vpnPingOn: Bool) -> IconSpec {
+        switch (keepAwakeOn, vpnPingOn) {
+        case (true, true):   return IconSpec(text: "2", color: .green)
+        case (true, false):  return IconSpec(text: "W", color: .brown)
+        case (false, true):  return IconSpec(text: "L", color: .purple)
+        case (false, false): return IconSpec(text: "\u{2715}", color: .red)
+        }
+    }
+
+    /// Menu header suffix, e.g. "KeepAwake — keep awake + VPN keep-alive".
+    public static func statusSummary(keepAwakeOn: Bool, vpnPingOn: Bool) -> String {
+        switch (keepAwakeOn, vpnPingOn) {
+        case (true, true):   return "keep awake + VPN keep-alive"
+        case (true, false):  return "keep awake"
+        case (false, true):  return "VPN keep-alive"
+        case (false, false): return "idle"
+        }
+    }
+
+    /// Status-item tooltip: spells out both toggles for anyone who can't read
+    /// the badge color.
+    public static func statusTooltip(keepAwakeOn: Bool, vpnPingOn: Bool) -> String {
+        func onOff(_ b: Bool) -> String { b ? "on" : "off" }
+        return "Keep awake: \(onOff(keepAwakeOn)) \u{00B7} VPN keep-alive: \(onOff(vpnPingOn))"
+    }
+
+    // MARK: - "Everything on" menu item
+
+    /// Checkbox state of the "Everything on" item: a dash when exactly one
+    /// toggle is on, so the item doubles as a summary.
+    public enum EverythingState { case on, off, mixed }
+
+    public static func everythingState(keepAwakeOn: Bool, vpnPingOn: Bool) -> EverythingState {
+        switch (keepAwakeOn, vpnPingOn) {
+        case (true, true):   return .on
+        case (false, false): return .off
+        default:             return .mixed
+        }
+    }
+
+    /// What clicking "Everything on" should set both toggles to: off only when
+    /// everything is already on, so the item is never a no-op.
+    public static func everythingTarget(keepAwakeOn: Bool, vpnPingOn: Bool) -> Bool {
+        !(keepAwakeOn && vpnPingOn)
+    }
 }

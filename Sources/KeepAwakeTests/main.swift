@@ -68,6 +68,50 @@ do {
     print("  FAIL — plist is not valid XML: \(error)")
 }
 
+print("iconSpec")
+// The character carries the state on its own, so the icon stays readable
+// without relying on the background color.
+let bothOn = Core.iconSpec(keepAwakeOn: true, vpnPingOn: true)
+eq(bothOn.text, "2", "both on shows 2")
+check(bothOn.color == .green, "both on is green")
+
+let awakeOnly = Core.iconSpec(keepAwakeOn: true, vpnPingOn: false)
+eq(awakeOnly.text, "W", "keep-awake only shows W")
+check(awakeOnly.color == .brown, "keep-awake only is brown")
+
+let vpnOnly = Core.iconSpec(keepAwakeOn: false, vpnPingOn: true)
+eq(vpnOnly.text, "L", "VPN keep-alive only shows L")
+check(vpnOnly.color == .purple, "VPN keep-alive only is purple")
+
+let bothOff = Core.iconSpec(keepAwakeOn: false, vpnPingOn: false)
+eq(bothOff.text, "\u{2715}", "nothing on shows an X mark")
+check(bothOff.color == .red, "nothing on is red")
+
+print("statusSummary")
+eq(Core.statusSummary(keepAwakeOn: true, vpnPingOn: true), "keep awake + VPN keep-alive", "both on names both")
+eq(Core.statusSummary(keepAwakeOn: true, vpnPingOn: false), "keep awake", "keep-awake only")
+eq(Core.statusSummary(keepAwakeOn: false, vpnPingOn: true), "VPN keep-alive", "VPN keep-alive only")
+eq(Core.statusSummary(keepAwakeOn: false, vpnPingOn: false), "idle", "neither is idle")
+
+print("statusTooltip")
+eq(Core.statusTooltip(keepAwakeOn: true, vpnPingOn: false),
+   "Keep awake: on \u{00B7} VPN keep-alive: off", "spells out both toggles")
+eq(Core.statusTooltip(keepAwakeOn: false, vpnPingOn: true),
+   "Keep awake: off \u{00B7} VPN keep-alive: on", "each state tracks its own toggle")
+
+print("everythingState")
+check(Core.everythingState(keepAwakeOn: true, vpnPingOn: true) == .on, "both on is checked")
+check(Core.everythingState(keepAwakeOn: false, vpnPingOn: false) == .off, "both off is unchecked")
+check(Core.everythingState(keepAwakeOn: true, vpnPingOn: false) == .mixed, "keep-awake only is a dash")
+check(Core.everythingState(keepAwakeOn: false, vpnPingOn: true) == .mixed, "VPN only is a dash")
+
+print("everythingTarget")
+check(!Core.everythingTarget(keepAwakeOn: true, vpnPingOn: true), "both on: clicking turns both off")
+check(Core.everythingTarget(keepAwakeOn: false, vpnPingOn: false), "both off: clicking turns both on")
+check(Core.everythingTarget(keepAwakeOn: true, vpnPingOn: false), "mixed: clicking turns both on")
+check(Core.everythingTarget(keepAwakeOn: false, vpnPingOn: true), "mixed: clicking turns both on")
+
+
 print("")
 if failures == 0 {
     print("ALL TESTS PASSED")
