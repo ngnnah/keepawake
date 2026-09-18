@@ -12,6 +12,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     var pingTimer: Timer?
     var lastPing = "—"
     var menuIsOpen = false
+    weak var lastPingItem: NSMenuItem?
 
     // MARK: - Persisted state
 
@@ -116,9 +117,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         ping.state = vpnPingOn ? .on : .off
         menu.addItem(ping)
 
-        let last = NSMenuItem(title: "Last ping: \(lastPing)", action: nil, keyEquivalent: "")
+        let last = NSMenuItem(title: Core.lastPingLine(lastPing), action: nil, keyEquivalent: "")
         last.isEnabled = false
         menu.addItem(last)
+        lastPingItem = last
 
         menu.addItem(.separator())
 
@@ -282,7 +284,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
             DispatchQueue.main.async {
                 self.lastPing = result
-                self.rebuildMenu()
+                // A ping can land while the menu is open. Rebuilding would
+                // swap `statusItem.menu` out from under it, so only the line
+                // that actually changed is retitled.
+                self.lastPingItem?.title = Core.lastPingLine(result)
             }
         }
     }

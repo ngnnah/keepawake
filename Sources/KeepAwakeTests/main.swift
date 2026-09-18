@@ -49,6 +49,10 @@ eq(Core.formatPingResult(exitStatus: 0, httpCode: "200", at: "12:00:00"),
 eq(Core.formatPingResult(exitStatus: 7, httpCode: "000", at: "12:00:00"),
    "unreachable @ 12:00:00", "failure line")
 
+print("lastPingLine")
+eq(Core.lastPingLine("HTTP 200 @ 12:00:00"), "Last ping: HTTP 200 @ 12:00:00", "prefixes the result")
+eq(Core.lastPingLine("—"), "Last ping: —", "handles the not-yet-pinged placeholder")
+
 print("loginPlist")
 let path = "/Applications/KeepAwake.app/Contents/MacOS/KeepAwake"
 let xml = Core.loginPlist(executablePath: path)

@@ -30,6 +30,12 @@ public enum Core {
         exitStatus == 0 ? "HTTP \(httpCode) @ \(time)" : "unreachable @ \(time)"
     }
 
+    /// The menu's "Last ping" line. Shared by the initial menu build and the
+    /// in-place refresh so the two can't drift apart.
+    public static func lastPingLine(_ result: String) -> String {
+        "Last ping: \(result)"
+    }
+
     /// The launchd LaunchAgent plist that relaunches the app at login.
     public static func loginPlist(executablePath: String) -> String {
         """
