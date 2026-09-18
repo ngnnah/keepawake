@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Test
         run: swift run KeepAwakeTests
@@ -24,7 +24,7 @@ jobs:
           plutil -lint build/KeepAwake.app/Contents/Info.plist
 
       - name: Upload app artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: KeepAwake-app
           path: build/KeepAwake.app
